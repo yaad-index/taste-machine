@@ -32,6 +32,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
 
 ### 3. Affinity per value
 - affinity(v) = Σ signal / (n + k), with k = 3. The sum runs over the n items that have value v.
+- The items counted in n are the member's history: taste entries with a rating or at least one play. An entry with neither says nothing about taste and is not counted; one play counts, with signal 0.
 - For `votes`, each item contributes signal × share(v), and n is Σ share(v), not the item count, so votes affinities sit on the same scale as category ones.
 - **A stated preference in the taste file** replaces affinity(v): like is +1, dislike is −1.
 - **"never"** is allowed only on fields whose role includes `filter`. It acts as that field's filter, so filtering still has one path. On other fields it is a load error.
@@ -65,6 +66,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
 ### 6. Answers during `pick` (session only, never written back to the taste file)
 - **A filter answer** narrows **remaining**.
 - **A preference answer** narrows remaining to the items that **match it for narrowing**, if any exist. If none match, it gives way: remaining is unchanged and the answer is reported as unmet.
+- An answer on a `both` field is a preference answer: it narrows and scores, and gives way when nothing matches. The field's hard filter is a stored "never" in the taste file.
 - **"Matches for narrowing"** means:
   - set, category, bool: the item has the value;
   - number: the same bucket;
@@ -80,6 +82,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
   - Taste and answers are separate terms, so a stated preference and an answer on the same value are not double-counted. One is history, the other is "right now".
 - **"No preference"** skips the field.
 - **"Other"** keeps the items that have none of the offered values, then offers the next 3.
+  - On a `range` field the fits-N options overlap, so they are shown in numeric order, and "other" only shows the next numbers and narrows nothing; narrowing happens when a number is picked.
 
 ### 7. Question selection
 - **Candidate questions:** askable, unanswered fields whose options split remaining into at least 2 non-empty groups.
@@ -93,6 +96,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
   - Groups are taken over **all** options of the field (not only the 3 shown), plus a "none" group for items without the field.
   - With group sizes g and total G = Σ|g| (G can exceed |remaining| when set values overlap), P(g) = |g| / G and the expected remaining size is Σ|g|² / G.
   - Membership uses the "matches for narrowing" rule in section 6.
+- **Group size first:** in single-user mode, the field marked `group_size` is asked first when it is askable, before the expected-size rule. In group mode it is not asked (ADR 0003 sets it from N).
 - **Ties** break by schema order, then by field name.
 - **The 3 options shown** are ordered by the user's affinity (highest first), then by count in remaining. "Other" and "no preference" are always added.
 - **Stop** when remaining has 3 or fewer items, or no question splits it.
