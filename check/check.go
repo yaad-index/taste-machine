@@ -38,7 +38,7 @@ type Report struct {
 
 // Run checks every acquisition-list item. Scored items come first, ranked
 // as results are; excluded items follow in id order.
-func Run(mo *score.Model, threshold float64) []Report {
+func Run(mo score.Taste, threshold float64) []Report {
 	items := mo.AcquisitionItems()
 	passed, excluded := mo.Filters(items)
 	shelf := mo.ShelfItems()
@@ -67,7 +67,7 @@ func Run(mo *score.Model, threshold float64) []Report {
 	return out
 }
 
-func report(mo *score.Model, it score.Item, shelf []score.Item, threshold float64, r Report) Report {
+func report(mo score.Taste, it score.Item, shelf []score.Item, threshold float64, r Report) Report {
 	var near []Neighbour
 	for _, other := range shelf {
 		if other.ID == it.ID {
@@ -90,7 +90,7 @@ func report(mo *score.Model, it score.Item, shelf []score.Item, threshold float6
 // is preference or both and that either item has, Σ weight × field
 // similarity / Σ weight. A field only one item has scores 0. Per-user
 // fields are left out: they describe a person's history, not the item.
-func Similarity(mo *score.Model, a, b score.Item) float64 {
+func Similarity(mo score.Taste, a, b score.Item) float64 {
 	var sum, weights float64
 	for _, f := range mo.CatalogueFields() {
 		if !f.IsPreference() {
@@ -113,7 +113,7 @@ func Similarity(mo *score.Model, a, b score.Item) float64 {
 	return sum / weights
 }
 
-func fieldSimilarity(mo *score.Model, f schema.Field, a, b schema.Value) float64 {
+func fieldSimilarity(mo score.Taste, f schema.Field, a, b schema.Value) float64 {
 	switch f.Type {
 	case schema.Category, schema.Bool:
 		if slices.Equal(a.Values(), b.Values()) {
@@ -123,7 +123,7 @@ func fieldSimilarity(mo *score.Model, f schema.Field, a, b schema.Value) float64
 	case schema.Set:
 		return jaccard(a.Set, b.Set)
 	case schema.Number:
-		e := mo.Edges[f.Name]
+		e := mo.BucketEdges(f.Name)
 		return 1 - math.Abs(float64(e.Bucket(a.Number)-e.Bucket(b.Number)))/float64(e.Count())
 	case schema.Votes:
 		return 1 - totalVariation(a.Shares(), b.Shares())

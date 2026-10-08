@@ -40,9 +40,24 @@ type Result struct {
 	Passed []string
 	// Matched lists the answers the item matched, set by the question flow.
 	Matched []string
-	// Rating is the member's rating with direction applied.
+	// Rating is the member's rating with direction applied; in group mode,
+	// the mean over the members who rated the item.
 	Rating   float64
 	HasRated bool
+	// Members holds each member's part in group mode, in label order.
+	Members []MemberScore
+	// Floor is the lowest member taste score in group mode.
+	Floor float64
+}
+
+// MemberScore is one member's part of a group result.
+type MemberScore struct {
+	Label     string
+	Score     float64
+	Favourite bool
+	// Positive and Negative are the member's top contributions.
+	Positive []Contribution
+	Negative []Contribution
 }
 
 // Positive returns the n largest positive contributions.
@@ -108,11 +123,20 @@ func (mo *Model) Score(it Item) Result {
 }
 
 // Rank sorts results by ADR 0002 section 8: final score descending, then
-// the member's rating descending with unrated items last, then id.
+// the member's rating descending with unrated items last, then id. Group
+// results break a tie on the final score by the lowest member score first
+// (ADR 0003 section 4).
 func Rank(results []Result) {
 	slices.SortFunc(results, func(a, b Result) int {
 		if c := cmp.Compare(b.Final, a.Final); c != 0 {
 			return c
+		}
+		// ADR 0003 section 4: in a group, the item that leaves nobody
+		// worst off goes first.
+		if len(a.Members) > 0 && len(b.Members) > 0 {
+			if c := cmp.Compare(b.Floor, a.Floor); c != 0 {
+				return c
+			}
 		}
 		if a.HasRated != b.HasRated {
 			if a.HasRated {
@@ -165,6 +189,9 @@ func (mo *Model) ScoreAll(items []Item) Outcome {
 // positive and top 2 negative contributions, the answers it matched, the
 // filters it passed, and whether it is on the favourites list.
 func (r Result) Explain() string {
+	if len(r.Members) > 0 {
+		return r.explainGroup()
+	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s  score %.3f", r.ID, r.Final)
 	if r.Favourite {
@@ -202,3 +229,37 @@ func (mo *Model) AcquisitionItems() []Item {
 
 // CatalogueFields lists the catalogue's fields in schema order.
 func (mo *Model) CatalogueFields() []schema.Field { return mo.d.Schema.Fields }
+
+// explainGroup renders a group result (ADR 0003 section 6): the group
+// score, each member's score with their top 2 positive and top 1 negative
+// contributions, the answers matched, the filters passed, and which members
+// have the item as a favourite.
+func (r Result) explainGroup() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s  group score %.3f\n", r.ID, r.Final)
+	var favs []string
+	for _, m := range r.Members {
+		fmt.Fprintf(&b, "  %s: %.3f", m.Label, m.Score)
+		if m.Favourite {
+			b.WriteString(" (favourite)")
+			favs = append(favs, m.Label)
+		}
+		b.WriteString("\n")
+		for _, c := range m.Positive {
+			fmt.Fprintf(&b, "    + %s = %s  %+.3f\n", c.Field, c.Value, c.Amount)
+		}
+		for _, c := range m.Negative {
+			fmt.Fprintf(&b, "    - %s = %s  %+.3f\n", c.Field, c.Value, c.Amount)
+		}
+	}
+	for _, m := range r.Matched {
+		fmt.Fprintf(&b, "  matched: %s\n", m)
+	}
+	for _, p := range r.Passed {
+		fmt.Fprintf(&b, "  passed: %s\n", p)
+	}
+	if len(favs) > 0 {
+		fmt.Fprintf(&b, "  favourite of: %s\n", strings.Join(favs, ", "))
+	}
+	return b.String()
+}

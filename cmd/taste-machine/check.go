@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/yaad-index/taste-machine/check"
+	"github.com/yaad-index/taste-machine/score"
 )
 
 type checkCmd struct {
-	Shelf       string  `required:"" type:"existingfile" help:"The shelf to compare against."`
-	Taste       string  `required:"" type:"existingfile" help:"The taste file."`
+	tasteFlags  `embed:""`
 	Acquisition string  `required:"" type:"existingfile" help:"The acquisition list to check."`
 	Threshold   float64 `default:"${threshold}" help:"Similarity at which a shelf item counts as like the checked one."`
 }
@@ -18,13 +18,17 @@ func (c *checkCmd) Run(e env) error {
 	if c.Threshold < 0 || c.Threshold > 1 {
 		return fmt.Errorf("--threshold %v is outside [0, 1]", c.Threshold)
 	}
-	mo, err := loadModel(c.Shelf, c.Taste, c.Acquisition, e)
+	taste, _, err := c.load(c.Acquisition, e)
 	if err != nil {
 		return err
 	}
-	for _, r := range check.Run(mo, c.Threshold) {
+	for _, r := range check.Run(taste, c.Threshold) {
 		if r.Excluded != nil {
-			_, _ = fmt.Fprintf(e.stdout, "%s  excluded: %s\n", r.ID, r.Excluded)
+			verb := "excluded"
+			if r.Excluded.Member != "" && r.Excluded.Kind == score.ByList {
+				verb = "vetoed"
+			}
+			_, _ = fmt.Fprintf(e.stdout, "%s  %s: %s\n", r.ID, verb, r.Excluded)
 		} else {
 			_, _ = fmt.Fprint(e.stdout, r.Result.Explain())
 		}

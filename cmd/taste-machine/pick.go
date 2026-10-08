@@ -5,11 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/yaad-index/taste-machine/dataset"
 	"github.com/yaad-index/taste-machine/fileformat"
 	"github.com/yaad-index/taste-machine/pick"
 	"github.com/yaad-index/taste-machine/score"
@@ -25,25 +23,35 @@ type exitError struct{ code int }
 func (e exitError) Error() string { return fmt.Sprintf("exit %d", e.code) }
 
 type pickCmd struct {
-	Shelf   string `required:"" type:"existingfile" help:"The shelf to pick from."`
-	Taste   string `required:"" type:"existingfile" help:"The taste file."`
-	OneShot bool   `name:"one-shot" help:"Ask nothing: use the answers stored in the taste file."`
-	Top     int    `default:"10" help:"How many results to show."`
+	tasteFlags `embed:""`
+	OneShot    bool     `name:"one-shot" help:"Ask nothing: use the stored answers (one person) or the --answer flags (group mode)."`
+	Answer     []string `sep:"none" help:"Group mode, with --one-shot: an answer as field=value (field= for no preference)."`
+	Top        int      `default:"10" help:"How many results to show."`
 }
 
 func (c *pickCmd) Run(e env) error {
-	mo, err := loadModel(c.Shelf, c.Taste, "", e)
+	if len(c.Answer) > 0 && (!c.group() || !c.OneShot) {
+		return errors.New("--answer needs --one-shot and group mode; one person's one-shot answers are stored in the taste file")
+	}
+	taste, single, err := c.load("", e)
 	if err != nil {
 		return err
 	}
-	s := pick.New(mo)
+	s := pick.New(taste)
 	if r := s.Empty(); r != nil {
 		printEmpty(e.stdout, *r)
 		return exitError{exitEmpty}
 	}
-	if c.OneShot {
-		err = oneShot(mo, s, e)
-	} else {
+	switch {
+	case c.OneShot && single != nil:
+		err = oneShot(s, e, single.Member.Meta.Answers, func(a fileformat.Answer) (pick.Answer, error) { return pick.StoredAnswer(single, a) })
+	case c.OneShot:
+		var given []fileformat.Answer
+		for _, a := range c.Answer {
+			given = append(given, fileformat.Answer{Field: a})
+		}
+		err = oneShot(s, e, given, func(a fileformat.Answer) (pick.Answer, error) { return pick.ParseAnswer(taste, a.Field) })
+	default:
 		err = interactive(s, e)
 	}
 	if err != nil {
@@ -59,40 +67,10 @@ func (c *pickCmd) Run(e env) error {
 	return nil
 }
 
-// loadModel reads the files and learns the member's model. The acquisition
-// list is optional: pass "" for none.
-func loadModel(shelfPath, tastePath, acquisitionPath string, e env) (*score.Model, error) {
-	shelf, err := fileformat.ReadCatalogueFile(shelfPath)
-	if err != nil {
-		return nil, err
-	}
-	taste, err := fileformat.ReadTasteFile(tastePath)
-	if err != nil {
-		return nil, err
-	}
-	var acq *fileformat.Catalogue
-	if acquisitionPath != "" {
-		if acq, err = fileformat.ReadCatalogueFile(acquisitionPath); err != nil {
-			return nil, err
-		}
-	}
-	name := strings.TrimSuffix(filepath.Base(tastePath), filepath.Ext(tastePath))
-	d, err := dataset.Load(shelf, []dataset.Input{{Taste: taste, Name: name}}, acq)
-	if err != nil {
-		return nil, err
-	}
-	for _, n := range d.Notices {
-		if n.Kind == dataset.AlreadyInCatalogue {
-			continue // check reports it per item
-		}
-		_, _ = fmt.Fprintf(e.stderr, "note: %s %s, ignored\n", n.Kind, n.ID)
-	}
-	return score.Learn(d, d.Members[0]), nil
-}
-
-func oneShot(mo *score.Model, s *pick.Session, e env) error {
-	for _, stored := range mo.Member.Meta.Answers {
-		a, err := pick.StoredAnswer(mo, stored)
+// oneShot applies answers in order, each read by parse.
+func oneShot(s *pick.Session, e env, answers []fileformat.Answer, parse func(fileformat.Answer) (pick.Answer, error)) error {
+	for _, stored := range answers {
+		a, err := parse(stored)
 		if err != nil {
 			return err
 		}

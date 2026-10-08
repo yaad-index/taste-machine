@@ -32,6 +32,17 @@ taste-machine check --shelf DIR/shelf.zip --taste DIR/taste.zip --acquisition LI
 
 Each item gets its score and explanation, plus how many shelf items are already like it (similarity of at least `--threshold`, default 0.6) and the three closest.
 
+### Group mode
+
+Give `--taste` more than once to pick or check for a group. Every member's filters apply, an item on anyone's blocked list is out, and the group score is the mean of the members' scores:
+
+```
+taste-machine pick --shelf DIR/shelf.zip --taste ME.zip --taste YOU.zip
+taste-machine pick --shelf DIR/shelf.zip --taste ME.zip --taste YOU.zip --one-shot --answer theme=sea
+```
+
+The group size (the number of taste files unless `--size` says otherwise) is checked against the field the schema marks as the group size, and is not asked. Each result shows every member's score and why.
+
 ## Development
 
 Requires only the Go version in `go.mod`; the formatters and the linter are built from `tools/go.mod`.

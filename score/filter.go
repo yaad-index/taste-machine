@@ -21,6 +21,8 @@ const (
 	ByList CauseKind = "item list"
 	// ByAnswer: an answer given during the question flow.
 	ByAnswer CauseKind = "answer"
+	// ByGroupSize: in group mode, the item does not fit the group's size.
+	ByGroupSize CauseKind = "group size"
 )
 
 // Cause is why one item was excluded.
@@ -30,19 +32,29 @@ type Cause struct {
 	// ByList, and Value is empty when the item lacked a filtered field.
 	Field string
 	Value string
+	// Member is the label of the member whose filter or list it is, in
+	// group mode.
+	Member string
 }
 
 func (c Cause) String() string {
+	var out string
 	switch {
 	case c.Kind == ByList:
-		return "on the blocked list"
+		out = "on the blocked list"
 	case c.Kind == ByAnswer:
-		return fmt.Sprintf("does not match the answer to %s (%s)", c.Field, c.Value)
+		out = fmt.Sprintf("does not match the answer to %s (%s)", c.Field, c.Value)
 	case c.Value == "":
-		return fmt.Sprintf("no %s, and the filter on it drops items without it", c.Field)
+		out = fmt.Sprintf("no %s, and the filter on it drops items without it", c.Field)
+	case c.Kind == ByGroupSize:
+		out = fmt.Sprintf("%s does not fit %s, the group size", c.Field, c.Value)
 	default:
-		return fmt.Sprintf("%s is %s, marked never", c.Field, c.Value)
+		out = fmt.Sprintf("%s is %s, marked never", c.Field, c.Value)
 	}
+	if c.Member != "" {
+		out += " (" + c.Member + ")"
+	}
+	return out
 }
 
 // Exclusion is one item a filter removed.
@@ -148,7 +160,7 @@ func Report(excluded []Exclusion) EmptyReport {
 		r.Causes = append(r.Causes, CauseCount{Cause: c, Items: n})
 	}
 	slices.SortFunc(r.Causes, func(a, b CauseCount) int {
-		return cmp.Or(cmp.Compare(a.Cause.Kind, b.Cause.Kind), cmp.Compare(a.Cause.Field, b.Cause.Field), cmp.Compare(a.Cause.Value, b.Cause.Value))
+		return cmp.Or(cmp.Compare(a.Cause.Kind, b.Cause.Kind), cmp.Compare(a.Cause.Field, b.Cause.Field), cmp.Compare(a.Cause.Value, b.Cause.Value), cmp.Compare(a.Cause.Member, b.Cause.Member))
 	})
 	return r
 }
