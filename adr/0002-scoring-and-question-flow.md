@@ -48,9 +48,19 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
 - A `range` filter passes when N is in [min, max].
 - **If filters leave 0 items**, the message names the cause:
   - the declared filter, when filters emptied the set before any question was asked;
-  - the answer, when an answer emptied it.
+  - the answer, when an answer emptied it;
+  - the item list (section 5b), when blocked items emptied it.
 - Interactive mode offers to remove that answer. One-shot mode prints the report and exits with code 3.
 - A filter is never relaxed silently.
+
+### 5b. Item lists
+- The taste file may carry two lists of item ids: `blocked` and `favourites`.
+- The names differ from the field value "never" in section 3 on purpose: that one filters by attribute value, these by item id.
+- **`blocked`** is applied as a hard filter on `id`, through the section 5 path, so it excludes the item whatever it scores and filtering keeps one path. The report names the list as the cause.
+- **`favourites`** sets the item's taste score to 1, the maximum. Hard filters still apply (a `favourites` item that does not fit the player count is still excluded), and answers still narrow it like any other item. The explanation still lists the computed contributions and says the score shown is 1 because of the list.
+- List ids resolve against the shelf or the acquisition list. An id on both `blocked` and `favourites` is a load error. An id in neither is reported and ignored.
+- In `check`, a `blocked` item is reported as excluded and not scored; a `favourites` item gets taste score 1 and is flagged in the result.
+- The lists do not change learning: a rated item on either list still contributes its signal to affinities.
 
 ### 6. Answers during `pick` (session only, never written back to the taste file)
 - **A filter answer** narrows **remaining**.
@@ -100,7 +110,8 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
 Every result lists:
 - its top 3 positive and top 2 negative contributions, each with field, value and amount;
 - the answers it matched;
-- the filters it passed.
+- the filters it passed;
+- whether it is on the `favourites` list.
 
 ### 10. `check` similarity
 - **Item similarity** = Σ over the fields whose role is `preference` or `both` (and so not `range`, `info` or filter-only) that are present on either item, of weight × field similarity, divided by Σ weight. A field missing on one item scores 0.
