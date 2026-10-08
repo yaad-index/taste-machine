@@ -203,9 +203,9 @@ func TestRangeAnswer(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, []pick.Option{
 		{Key: "1", Label: "fits 1", Count: 7},
+		{Key: "2", Label: "fits 2", Count: 6},
 		{Key: "3", Label: "fits 3", Count: 7},
-		{Key: "4", Label: "fits 4", Count: 7},
-	}, q.Options, "range options: whole N within each item's range (b fits 3 to 6, not 2), by count then N")
+	}, q.Options, "range options: whole N within each item's range (b fits 3 to 6, not 2), in numeric order")
 	assert.True(t, q.More)
 	_, err := s.Apply(pick.Answer{Field: "fits", Key: "5"})
 	require.NoError(t, err)
@@ -418,4 +418,45 @@ func TestGroupSizeAskedFirst(t *testing.T) {
 	q, ok = pick.New(model(t, []schema.Field{weightF, players}, items, nil)).Next()
 	require.True(t, ok)
 	assert.Equal(t, "weight", q.Field.Name, "a group-size field that does not split is skipped")
+}
+
+// TestRangeOtherPages is the repro for "other" on a range field: the fits-N
+// options overlap, so "other" must not drop the items that fit a shown
+// number, since they may fit the wanted one too.
+func TestRangeOtherPages(t *testing.T) {
+	var items []fileformat.Item
+	for i := range 5 {
+		items = append(items, fileformat.Item{ID: string(rune('a' + i)), Facts: map[string]schema.Value{"fits": fits(2, 4)}})
+	}
+	items = append(items, fileformat.Item{ID: "f", Facts: map[string]schema.Value{"fits": fits(2, 5)}})
+	s := pick.New(model(t, []schema.Field{fitsF}, items, nil))
+	q, ok := s.Next()
+	require.True(t, ok)
+	assert.Equal(t, []string{"2", "3", "4"}, keys(q))
+	assert.True(t, q.More)
+
+	out, err := s.Apply(pick.Answer{Field: "fits", Kind: pick.Other, Shown: keys(q)})
+	require.NoError(t, err)
+	assert.Nil(t, out.Empty)
+	assert.Equal(t, 6, s.Remaining(), "other narrows nothing on a range field")
+	q, ok = s.Next()
+	require.True(t, ok)
+	assert.Equal(t, "fits", q.Field.Name)
+	assert.Equal(t, []string{"5"}, keys(q), "it shows the next numbers")
+	assert.False(t, q.More)
+
+	_, err = s.Apply(pick.Answer{Field: "fits", Key: "5"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"f"}, ids(s.Results()), "picking the number narrows")
+
+	s = pick.New(model(t, []schema.Field{fitsF}, items, nil))
+	q, _ = s.Next()
+	_, err = s.Apply(pick.Answer{Field: "fits", Kind: pick.Other, Shown: keys(q)})
+	require.NoError(t, err)
+	q, _ = s.Next()
+	_, err = s.Apply(pick.Answer{Field: "fits", Kind: pick.Other, Shown: keys(q)})
+	require.NoError(t, err)
+	_, ok = s.Next()
+	assert.False(t, ok, "paged past every number: nothing left to ask")
+	assert.Equal(t, 6, s.Remaining())
 }

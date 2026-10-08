@@ -165,19 +165,34 @@ func (s *Session) question(f schema.Field) (Question, bool) {
 	if g.nonEmpty() < 2 {
 		return Question{}, false
 	}
-	// Options already shown in this field need no skipping: "other" removed
-	// every item that had one.
+	// On other fields, options already shown need no skipping: "other"
+	// removed every item that had one. On a range field "other" narrows
+	// nothing, so the numbers it paged past are skipped here.
+	var offered []string
+	if f.Type == schema.Range {
+		offered = s.offered(f.Name)
+	}
 	var opts []Option
 	for _, key := range g.keys() {
+		if slices.Contains(offered, key) {
+			continue
+		}
 		opts = append(opts, Option{Key: key, Label: s.label(f, key), Count: len(g.members[key])})
 	}
-	slices.SortFunc(opts, func(a, b Option) int {
-		return cmp.Or(
-			cmp.Compare(s.mo.Affinity(f.Name, b.Key), s.mo.Affinity(f.Name, a.Key)),
-			cmp.Compare(b.Count, a.Count),
-			compareKeys(f, a.Key, b.Key),
-		)
-	})
+	if len(opts) == 0 {
+		return Question{}, false
+	}
+	// Range options overlap (most items fit most counts), so they are shown
+	// in numeric order rather than by count.
+	if f.Type != schema.Range {
+		slices.SortFunc(opts, func(a, b Option) int {
+			return cmp.Or(
+				cmp.Compare(s.mo.Affinity(f.Name, b.Key), s.mo.Affinity(f.Name, a.Key)),
+				cmp.Compare(b.Count, a.Count),
+				compareKeys(f, a.Key, b.Key),
+			)
+		})
+	}
 	q := Question{Field: f, Options: opts[:min(Shown, len(opts))], More: len(opts) > Shown}
 	return q, true
 }
@@ -194,6 +209,11 @@ func (s *Session) Apply(a Answer) (Outcome, error) {
 	case NoPreference:
 	case Other:
 		ap.done = false
+		if f.Type == schema.Range {
+			// Fits-N options overlap: an item that fits a shown number may
+			// fit the one wanted too, so "other" only pages.
+			break
+		}
 		s.remaining = s.keep(f, func(it score.Item) bool {
 			for _, k := range a.Shown {
 				if matchesNarrow(s.mo, it, f, k) {
@@ -276,6 +296,17 @@ func answerExclusions(items []score.Item, f schema.Field, answer string) []score
 	out := make([]score.Exclusion, 0, len(items))
 	for _, it := range items {
 		out = append(out, score.Exclusion{ID: it.ID, Cause: score.Cause{Kind: score.ByAnswer, Field: f.Name, Value: answer}})
+	}
+	return out
+}
+
+// offered lists the option keys "other" answers have paged past in a field.
+func (s *Session) offered(field string) []string {
+	var out []string
+	for _, a := range s.answers {
+		if a.answer.Field == field && a.answer.Kind == Other {
+			out = append(out, a.answer.Shown...)
+		}
 	}
 	return out
 }
