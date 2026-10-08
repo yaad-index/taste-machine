@@ -83,7 +83,7 @@ type applied struct {
 
 // Session is one run of the question flow for one member.
 type Session struct {
-	mo        *score.Model
+	mo        score.Taste
 	remaining []score.Item
 	excluded  []score.Exclusion
 	answers   []applied
@@ -93,7 +93,7 @@ type Session struct {
 
 // New starts a session over the member's shelf, after the declared
 // filters.
-func New(mo *score.Model) *Session {
+func New(mo score.Taste) *Session {
 	passed, excluded := mo.Filters(mo.ShelfItems())
 	return &Session{mo: mo, remaining: passed, excluded: excluded}
 }
@@ -127,7 +127,7 @@ func (s *Session) Next() (Question, bool) {
 	}
 	// The group-size field goes first when it is askable (ADR 0002 section
 	// 7): it is the question people settle before any other.
-	for _, f := range s.mo.AllFields() {
+	for _, f := range s.mo.QuestionFields() {
 		if f.GroupSize && f.Askable && !s.answered(f.Name) {
 			if q, ok := s.question(f); ok {
 				return q, true
@@ -136,7 +136,7 @@ func (s *Session) Next() (Question, bool) {
 	}
 	var best *Question
 	bestSize := math.Inf(1)
-	for _, f := range s.mo.AllFields() {
+	for _, f := range s.mo.QuestionFields() {
 		if !f.Askable || s.answered(f.Name) {
 			continue
 		}
@@ -339,7 +339,7 @@ func (s *Session) Results() []score.Result {
 					r.Matched = append(r.Matched, fmt.Sprintf("%s = %s", a.field.Name, s.label(a.field, a.answer.Key)))
 				}
 			}
-			r.Final = r.TasteScore + s.mo.Constants.AnswerWeight*sum/float64(len(prefs))
+			r.Final = r.TasteScore + s.mo.AnswerWeight()*sum/float64(len(prefs))
 		}
 		for _, a := range s.answers {
 			if a.answer.Kind == Value && a.field.Role == schema.Filter && has(it, a.field) {
@@ -356,7 +356,7 @@ func (s *Session) Results() []score.Result {
 // for scoring only: 1 or 0 for set, category and bool; 1 − |Δbucket| /
 // buckets for number; the value's share for votes. An item without the
 // field matches 0.
-func Match(mo *score.Model, it score.Item, f schema.Field, key string) float64 {
+func Match(mo score.Taste, it score.Item, f schema.Field, key string) float64 {
 	v, ok := it.Value(f.Name)
 	if !ok {
 		return 0
@@ -367,7 +367,7 @@ func Match(mo *score.Model, it score.Item, f schema.Field, key string) float64 {
 		if err != nil {
 			return 0
 		}
-		e := mo.Edges[f.Name]
+		e := mo.BucketEdges(f.Name)
 		return 1 - math.Abs(float64(e.Bucket(v.Number)-want))/float64(e.Count())
 	case schema.Votes:
 		return v.Shares()[key]
@@ -384,19 +384,19 @@ func Match(mo *score.Model, it score.Item, f schema.Field, key string) float64 {
 // matchesNarrow is ADR 0002's "matches for narrowing": the item has the
 // value; for number, the same bucket; for votes, the value has the item's
 // top share (ties count); for range, the item fits N.
-func matchesNarrow(mo *score.Model, it score.Item, f schema.Field, key string) bool {
+func matchesNarrow(mo score.Taste, it score.Item, f schema.Field, key string) bool {
 	return slices.Contains(narrowKeys(mo, it, f), key)
 }
 
 // narrowKeys lists the option keys an item matches for narrowing.
-func narrowKeys(mo *score.Model, it score.Item, f schema.Field) []string {
+func narrowKeys(mo score.Taste, it score.Item, f schema.Field) []string {
 	v, ok := it.Value(f.Name)
 	if !ok {
 		return nil
 	}
 	switch f.Type {
 	case schema.Number:
-		return []string{strconv.Itoa(mo.Edges[f.Name].Bucket(v.Number))}
+		return []string{strconv.Itoa(mo.BucketEdges(f.Name).Bucket(v.Number))}
 	case schema.Votes:
 		shares := v.Shares()
 		var top float64
@@ -519,7 +519,7 @@ func compareKeys(f schema.Field, a, b string) int {
 // JSON string names a value (category, bool, set, votes), a number gives a
 // number field's value (bucketed with the shelf's edges) or a range
 // field's N, and null means no preference.
-func StoredAnswer(mo *score.Model, a fileformat.Answer) (Answer, error) {
+func StoredAnswer(mo score.Taste, a fileformat.Answer) (Answer, error) {
 	f, ok := mo.Field(a.Field)
 	if !ok {
 		return Answer{}, fmt.Errorf("answer on %q: unknown field", a.Field)
@@ -535,7 +535,7 @@ func StoredAnswer(mo *score.Model, a fileformat.Answer) (Answer, error) {
 			return Answer{}, fmt.Errorf("answer on %q: want a number: %w", f.Name, err)
 		}
 		if f.Type == schema.Number {
-			return Answer{Field: f.Name, Key: strconv.Itoa(mo.Edges[f.Name].Bucket(n))}, nil
+			return Answer{Field: f.Name, Key: strconv.Itoa(mo.BucketEdges(f.Name).Bucket(n))}, nil
 		}
 		if n != math.Trunc(n) {
 			return Answer{}, fmt.Errorf("answer on %q: want a whole number", f.Name)
@@ -551,4 +551,28 @@ func StoredAnswer(mo *score.Model, a fileformat.Answer) (Answer, error) {
 		}
 		return Answer{Field: f.Name, Key: v}, nil
 	}
+}
+
+// ParseAnswer reads an answer written as field=value, as the command line
+// gives one-shot answers in group mode. An empty value means no
+// preference; the value is read as StoredAnswer reads a stored one.
+func ParseAnswer(mo score.Taste, s string) (Answer, error) {
+	field, value, ok := strings.Cut(s, "=")
+	if !ok || field == "" {
+		return Answer{}, fmt.Errorf("answer %q: want field=value", s)
+	}
+	f, ok := mo.Field(field)
+	if !ok {
+		return Answer{}, fmt.Errorf("answer on %q: unknown field", field)
+	}
+	var raw []byte
+	switch {
+	case value == "":
+		raw = []byte("null")
+	case f.Type == schema.Number || f.Type == schema.Range:
+		raw = []byte(value)
+	default:
+		raw, _ = json.Marshal(value)
+	}
+	return StoredAnswer(mo, fileformat.Answer{Field: field, Value: raw})
 }
