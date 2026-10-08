@@ -6,6 +6,12 @@ This file is for people and agents changing taste-machine. `README.md` is for pe
 
 A Go library with a CLI (`cmd/taste-machine`). Design decisions are numbered Architecture Decision Records in `adr/`; read the ADR governing an area before changing that area.
 
+## Packages
+
+- `schema`: field declarations (type, role, weights, buckets) and typed field values.
+- `fileformat`: reading and writing the zip files (catalogue, taste, acquisition list).
+- `dataset`: loading a shelf, taste files and an acquisition list together, checking they match, and joining them by item id.
+
 ## Before pushing
 
 ```

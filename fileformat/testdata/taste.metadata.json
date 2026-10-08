@@ -1,0 +1,43 @@
+{
+  "format_version": 1,
+  "schema_id": "test/v1",
+  "kind": "taste",
+  "schema": {
+    "fields": [
+      {
+        "name": "owned",
+        "type": "bool",
+        "role": "filter"
+      }
+    ]
+  },
+  "taste": {
+    "label": "first",
+    "scale": {
+      "min": 0,
+      "max": 5,
+      "decimals": true
+    },
+    "preferences": {
+      "tags": {
+        "x": "like",
+        "z": "never"
+      }
+    },
+    "blocked": [
+      "a"
+    ],
+    "favourites": [
+      "b"
+    ],
+    "constants": {
+      "k": 2
+    },
+    "answers": [
+      {
+        "field": "tags",
+        "value": "x"
+      }
+    ]
+  }
+}
