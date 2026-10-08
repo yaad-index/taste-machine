@@ -86,6 +86,10 @@ type Importer struct {
 	Username string
 	// Label is written as the taste file's label. It defaults to Username.
 	Label string
+
+	// NoDetails lists, after Compile, the ids the source returned no
+	// details for, in id order. They are written without facts.
+	NoDetails []string
 }
 
 type entry struct {
@@ -136,6 +140,12 @@ func (im *Importer) Compile(ctx context.Context) (*fileformat.Catalogue, *filefo
 	facts, err := im.things(ctx, ids)
 	if err != nil {
 		return nil, nil, err
+	}
+	im.NoDetails = nil
+	for _, id := range ids {
+		if _, ok := facts[id]; !ok {
+			im.NoDetails = append(im.NoDetails, strconv.FormatInt(id, 10))
+		}
 	}
 
 	shelf := &fileformat.Catalogue{Meta: fileformat.Metadata{

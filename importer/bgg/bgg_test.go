@@ -254,3 +254,30 @@ func TestLimiterSpacesRequests(t *testing.T) {
 	}
 	assert.GreaterOrEqual(t, time.Since(start), 60*time.Millisecond)
 }
+
+type partialSource struct{ fakeSource }
+
+func (p *partialSource) GetThings(ctx context.Context, req bggo.GetThingsRequest) ([]bggo.ThingResult, error) {
+	res, err := p.fakeSource.GetThings(ctx, req)
+	var out []bggo.ThingResult
+	for _, r := range res {
+		if r.ID%2 == 1 {
+			out = append(out, r)
+		}
+	}
+	return out, err
+}
+
+func TestCompileReportsItemsWithoutDetails(t *testing.T) {
+	im := &bgg.Importer{Source: &partialSource{fakeSource{coll: owned(5)}}, Username: "u"}
+	shelf, _, err := im.Compile(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, []string{"2", "4"}, im.NoDetails, "ids the source returned nothing for")
+	assert.Len(t, shelf.Items, 5, "they stay on the shelf, without facts")
+	assert.Nil(t, shelf.Items[1].Facts)
+
+	im.Source = &fakeSource{coll: owned(2)}
+	_, _, err = im.Compile(context.Background())
+	require.NoError(t, err)
+	assert.Nil(t, im.NoDetails, "reset on every compile")
+}

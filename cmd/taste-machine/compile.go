@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/yaad-index/taste-machine/fileformat"
@@ -40,6 +41,9 @@ func (c *compileBGGCmd) Run(ctx context.Context, e env) error {
 	}
 	if err := os.MkdirAll(c.Out, 0o755); err != nil {
 		return err
+	}
+	if len(im.NoDetails) > 0 {
+		_, _ = fmt.Fprintf(e.stderr, "note: the source returned no details for these items, written without facts: %s\n", strings.Join(im.NoDetails, ", "))
 	}
 	shelfPath, tastePath := filepath.Join(c.Out, "shelf.zip"), filepath.Join(c.Out, "taste.zip")
 	if err := errors.Join(fileformat.WriteFile(shelfPath, shelf), fileformat.WriteFile(tastePath, taste)); err != nil {
