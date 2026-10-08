@@ -112,7 +112,8 @@ func (s *Session) Empty() *score.EmptyReport {
 }
 
 // Next returns the next question, or false when the flow should stop:
-// StopAt or fewer items remain, or no question splits them.
+// StopAt or fewer items remain, or no question splits them. An askable
+// group-size field is asked before the expected-size rule applies.
 func (s *Session) Next() (Question, bool) {
 	if len(s.remaining) <= StopAt {
 		return Question{}, false
@@ -123,6 +124,15 @@ func (s *Session) Next() (Question, bool) {
 			return q, true
 		}
 		s.paging = ""
+	}
+	// The group-size field goes first when it is askable (ADR 0002 section
+	// 7): it is the question people settle before any other.
+	for _, f := range s.mo.AllFields() {
+		if f.GroupSize && f.Askable && !s.answered(f.Name) {
+			if q, ok := s.question(f); ok {
+				return q, true
+			}
+		}
 	}
 	var best *Question
 	bestSize := math.Inf(1)

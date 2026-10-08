@@ -13,6 +13,7 @@ A Go library with a CLI (`cmd/taste-machine`). Design decisions are numbered Arc
 - `dataset`: loading a shelf, taste files and an acquisition list together, checking they match, and joining them by item id.
 - `score`: the v1 matcher of ADR 0002: per-member affinities, filters, the taste score, ranking and explanations.
 - `pick`: the question flow of ADR 0002 sections 6 and 7: choosing questions, applying answers, ranking what remains.
+- `check`: scoring an acquisition list and finding the shelf items most like each entry (ADR 0002 section 10).
 - `importer`: the interface every source implements; each source lives in its own package below it (`importer/bgg`).
 - `cmd/taste-machine`: the CLI, a thin Kong layer over the packages.
 

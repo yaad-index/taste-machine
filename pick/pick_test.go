@@ -392,3 +392,30 @@ func TestUndoneOtherIsNotAskedAgain(t *testing.T) {
 	_, ok = s.Next()
 	assert.False(t, ok, "the undone field counts as no preference and is not asked again")
 }
+
+func TestGroupSizeAskedFirst(t *testing.T) {
+	players := fitsF
+	players.GroupSize = true
+	s := pick.New(model(t, []schema.Field{weightF, players}, shelf(), nil))
+	q, ok := s.Next()
+	require.True(t, ok)
+	assert.Equal(t, "fits", q.Field.Name, "the group-size field comes first, though weight splits better")
+	_, err := s.Apply(pick.Answer{Field: "fits", Key: "2"})
+	require.NoError(t, err)
+	q, ok = s.Next()
+	require.True(t, ok)
+	assert.Equal(t, "weight", q.Field.Name, "then the expected-size rule")
+
+	players.Askable = false
+	q, _ = pick.New(model(t, []schema.Field{weightF, players}, shelf(), nil)).Next()
+	assert.Equal(t, "weight", q.Field.Name, "not askable, not asked")
+
+	items := shelf()[:5]
+	for _, it := range items {
+		it.Facts["fits"] = fits(2, 2)
+	}
+	players.Askable = true
+	q, ok = pick.New(model(t, []schema.Field{weightF, players}, items, nil)).Next()
+	require.True(t, ok)
+	assert.Equal(t, "weight", q.Field.Name, "a group-size field that does not split is skipped")
+}

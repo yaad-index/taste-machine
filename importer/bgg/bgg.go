@@ -47,7 +47,7 @@ const FieldPlayed = "played"
 // CatalogueSchema is the schema of the shelf and the learn-from catalogue.
 func CatalogueSchema() schema.Schema {
 	return schema.Schema{Fields: []schema.Field{
-		{Name: FieldPlayers, Type: schema.Range, Role: schema.Filter, GroupSize: true},
+		{Name: FieldPlayers, Type: schema.Range, Role: schema.Filter, Askable: true, GroupSize: true},
 		{Name: FieldBestPlayers, Type: schema.Votes, Role: schema.Preference, Askable: true},
 		{Name: FieldWeight, Type: schema.Number, Role: schema.Preference, Askable: true},
 		{Name: FieldPlayingTime, Type: schema.Number, Role: schema.Both, Askable: true},

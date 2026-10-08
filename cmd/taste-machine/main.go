@@ -8,12 +8,14 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/fzerorubigd/bggo"
 
 	"github.com/yaad-index/taste-machine/importer/bgg"
+	"github.com/yaad-index/taste-machine/score"
 )
 
 // version is set at release build time with -ldflags "-X main.version=...".
@@ -33,6 +35,7 @@ type cli struct {
 	Version kong.VersionFlag `help:"Print the version and exit."`
 	Compile compileCmd       `cmd:"" help:"Compile a source into a shelf and a taste file."`
 	Pick    pickCmd          `cmd:"" help:"Pick an item from a shelf, asking questions to narrow it down."`
+	Check   checkCmd         `cmd:"" help:"Score an acquisition list against a taste and find what the shelf already has like each item."`
 }
 
 func main() {
@@ -72,7 +75,10 @@ func run(ctx context.Context, args []string, e env) (code int) {
 		kong.Description("A domain-agnostic recommendation engine."),
 		kong.Writers(e.stdout, e.stderr),
 		kong.Exit(func(code int) { panic(exit(code)) }),
-		kong.Vars{"version": "taste-machine " + version},
+		kong.Vars{
+			"version":   "taste-machine " + version,
+			"threshold": strconv.FormatFloat(score.DefaultSimilarityThreshold, 'g', -1, 64),
+		},
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Bind(e),
 	)

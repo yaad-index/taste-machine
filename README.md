@@ -24,6 +24,14 @@ taste-machine pick --shelf DIR/shelf.zip --taste DIR/taste.zip --one-shot   # us
 
 Every result lists what made it score, the answers it matched and the filters it passed. When filters or answers leave nothing, the CLI says why and exits with code 3.
 
+Check a list of items you are thinking of buying (an acquisition list, in the same file format) against your taste:
+
+```
+taste-machine check --shelf DIR/shelf.zip --taste DIR/taste.zip --acquisition LIST.zip
+```
+
+Each item gets its score and explanation, plus how many shelf items are already like it (similarity of at least `--threshold`, default 0.6) and the three closest.
+
 ## Development
 
 Requires only the Go version in `go.mod`; the formatters and the linter are built from `tools/go.mod`.
