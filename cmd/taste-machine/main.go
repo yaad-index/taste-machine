@@ -22,6 +22,7 @@ var version = "dev"
 // env is what the commands take from the outside world, so tests can
 // replace it.
 type env struct {
+	stdin          io.Reader
 	stdout, stderr io.Writer
 	getenv         func(string) string
 	// newSource builds the client for the board game importer.
@@ -31,11 +32,13 @@ type env struct {
 type cli struct {
 	Version kong.VersionFlag `help:"Print the version and exit."`
 	Compile compileCmd       `cmd:"" help:"Compile a source into a shelf and a taste file."`
+	Pick    pickCmd          `cmd:"" help:"Pick an item from a shelf, asking questions to narrow it down."`
 }
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	code := run(ctx, os.Args[1:], env{
+		stdin:  os.Stdin,
 		stdout: os.Stdout,
 		stderr: os.Stderr,
 		getenv: os.Getenv,
@@ -89,6 +92,9 @@ func run(ctx context.Context, args []string, e env) (code int) {
 		return 2
 	}
 	if err := kctx.Run(); err != nil {
+		if code := exitCode(err); code != 1 {
+			return code
+		}
 		_, _ = fmt.Fprintln(e.stderr, "taste-machine:", err)
 		return 1
 	}

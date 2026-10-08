@@ -15,6 +15,15 @@ taste-machine compile bgg --user NAME --out DIR
 
 Requests are spaced at least `--interval` apart (default 2s). The API key is only read from the environment.
 
+Then pick from the shelf. The CLI asks the question that narrows the shelf most, and stops at three items or when no question helps:
+
+```
+taste-machine pick --shelf DIR/shelf.zip --taste DIR/taste.zip
+taste-machine pick --shelf DIR/shelf.zip --taste DIR/taste.zip --one-shot   # use the answers stored in the taste file
+```
+
+Every result lists what made it score, the answers it matched and the filters it passed. When filters or answers leave nothing, the CLI says why and exits with code 3.
+
 ## Development
 
 Requires only the Go version in `go.mod`; the formatters and the linter are built from `tools/go.mod`.
