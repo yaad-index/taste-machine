@@ -82,6 +82,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
   - Taste and answers are separate terms, so a stated preference and an answer on the same value are not double-counted. One is history, the other is "right now".
 - **"No preference"** skips the field.
 - **"Other"** keeps the items that have none of the offered values, then offers the next 3.
+  - On a `range` field the fits-N options overlap, so they are shown in numeric order, and "other" only shows the next numbers and narrows nothing; narrowing happens when a number is picked.
 
 ### 7. Question selection
 - **Candidate questions:** askable, unanswered fields whose options split remaining into at least 2 non-empty groups.
