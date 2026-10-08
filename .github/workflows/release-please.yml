@@ -3,7 +3,7 @@
 # On every push to main, release-please maintains a "release PR" that
 # accumulates the changelog + next version from the conventional-commit
 # history. Merging that PR tags the release (vMAJOR.MINOR.PATCH) and
-# publishes a GitHub Release; the `binaries` job then attaches the CLI built
+# publishes a GitHub Release; the `release-binaries` job then attaches the CLI built
 # for every platform in the Makefile, plus a checksums file. The first release
 # is pinned to 0.1.0 by `initial-version` in release-please-config.json —
 # without it the first feature-bearing release would be 1.0.0 regardless of
@@ -55,7 +55,7 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  binaries:
+  release-binaries:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
