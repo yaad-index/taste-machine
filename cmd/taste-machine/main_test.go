@@ -99,3 +99,17 @@ func TestCompileBGGNeedsKey(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, entries, "nothing is written without a key")
 }
+
+type sparseSource struct{ fakeSource }
+
+func (sparseSource) GetThings(context.Context, bggo.GetThingsRequest) ([]bggo.ThingResult, error) {
+	return nil, nil
+}
+
+func TestCompileBGGNotesMissingDetails(t *testing.T) {
+	te := &testEnv{vars: map[string]string{apiKeyEnv: "k"}}
+	e := te.env()
+	e.newSource = func(string, time.Duration) bgg.Source { return sparseSource{} }
+	require.Equal(t, 0, run(context.Background(), []string{"compile", "bgg", "--user", "u", "--out", t.TempDir()}, e), te.stderr.String())
+	assert.Contains(t, te.stderr.String(), "note: the source returned no details for these items, written without facts: 7")
+}
