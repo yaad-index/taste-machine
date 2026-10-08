@@ -19,13 +19,15 @@ const (
 	ByFilter CauseKind = "filter"
 	// ByList: the member's blocked list.
 	ByList CauseKind = "item list"
+	// ByAnswer: an answer given during the question flow.
+	ByAnswer CauseKind = "answer"
 )
 
 // Cause is why one item was excluded.
 type Cause struct {
 	Kind CauseKind
-	// Field and Value name the filter; both are empty for ByList, and
-	// Value is empty when the item lacked the field.
+	// Field and Value name the filter or the answer; both are empty for
+	// ByList, and Value is empty when the item lacked a filtered field.
 	Field string
 	Value string
 }
@@ -34,6 +36,8 @@ func (c Cause) String() string {
 	switch {
 	case c.Kind == ByList:
 		return "on the blocked list"
+	case c.Kind == ByAnswer:
+		return fmt.Sprintf("does not match the answer to %s (%s)", c.Field, c.Value)
 	case c.Value == "":
 		return fmt.Sprintf("no %s, and the filter on it drops items without it", c.Field)
 	default:

@@ -36,6 +36,8 @@ type Result struct {
 	Contributions []Contribution
 	// Passed lists the filters the item passed.
 	Passed []string
+	// Matched lists the answers the item matched, set by the question flow.
+	Matched []string
 	// Rating is the member's rating with direction applied.
 	Rating   float64
 	HasRated bool
@@ -85,7 +87,7 @@ func (mo *Model) Score(it Item) Result {
 				amount := f.EffectiveWeight() / total * p.weight / inField * mo.Affinity(f.Name, p.key)
 				res.Computed += amount
 				if amount != 0 {
-					res.Contributions = append(res.Contributions, Contribution{Field: f.Name, Value: mo.valueLabel(f, p.key), Amount: amount})
+					res.Contributions = append(res.Contributions, Contribution{Field: f.Name, Value: mo.ValueLabel(f, p.key), Amount: amount})
 				}
 			}
 		}
@@ -158,8 +160,8 @@ func (mo *Model) ScoreAll(items []Item) Outcome {
 }
 
 // Explain renders a result's explanation (ADR 0002 section 9): its top 3
-// positive and top 2 negative contributions, the filters it passed, and
-// whether it is on the favourites list.
+// positive and top 2 negative contributions, the answers it matched, the
+// filters it passed, and whether it is on the favourites list.
 func (r Result) Explain() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s  score %.3f", r.ID, r.Final)
@@ -172,6 +174,9 @@ func (r Result) Explain() string {
 	}
 	for _, c := range r.Negative(2) {
 		fmt.Fprintf(&b, "  - %s = %s  %+.3f\n", c.Field, c.Value, c.Amount)
+	}
+	for _, m := range r.Matched {
+		fmt.Fprintf(&b, "  matched: %s\n", m)
 	}
 	for _, p := range r.Passed {
 		fmt.Fprintf(&b, "  passed: %s\n", p)

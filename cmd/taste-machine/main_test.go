@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +28,7 @@ func (fakeSource) GetThings(_ context.Context, req bggo.GetThingsRequest) ([]bgg
 }
 
 type testEnv struct {
+	stdin          string
 	stdout, stderr bytes.Buffer
 	vars           map[string]string
 	gotKey         string
@@ -35,6 +37,7 @@ type testEnv struct {
 
 func (te *testEnv) env() env {
 	return env{
+		stdin:  strings.NewReader(te.stdin),
 		stdout: &te.stdout,
 		stderr: &te.stderr,
 		getenv: func(k string) string { return te.vars[k] },

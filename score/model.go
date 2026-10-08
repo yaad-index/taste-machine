@@ -235,9 +235,23 @@ func (mo *Model) pairs(it Item, f schema.Field) []pair {
 	}
 }
 
-// valueLabel is how a value key reads in an explanation: the value itself,
-// or the bounds of a bucket.
-func (mo *Model) valueLabel(f schema.Field, key string) string {
+// Field looks a field up in the catalogue schema, then the member's.
+func (mo *Model) Field(name string) (schema.Field, bool) {
+	if f, ok := mo.d.Schema.Field(name); ok {
+		return f, true
+	}
+	return mo.Member.Schema.Field(name)
+}
+
+// AllFields lists the catalogue fields, then the member's per-user fields,
+// each in schema order.
+func (mo *Model) AllFields() []schema.Field {
+	return slices.Concat(mo.d.Schema.Fields, mo.Member.Schema.Fields)
+}
+
+// ValueLabel is how a value key reads to a person: the value itself, or the
+// bounds of a bucket for a number field.
+func (mo *Model) ValueLabel(f schema.Field, key string) string {
 	if f.Type != schema.Number {
 		return key
 	}
