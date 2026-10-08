@@ -66,6 +66,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
 ### 6. Answers during `pick` (session only, never written back to the taste file)
 - **A filter answer** narrows **remaining**.
 - **A preference answer** narrows remaining to the items that **match it for narrowing**, if any exist. If none match, it gives way: remaining is unchanged and the answer is reported as unmet.
+- An answer on a `both` field is a preference answer: it narrows and scores, and gives way when nothing matches. The field's hard filter is a stored "never" in the taste file.
 - **"Matches for narrowing"** means:
   - set, category, bool: the item has the value;
   - number: the same bucket;
