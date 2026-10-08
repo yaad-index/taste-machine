@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/yaad-index/taste-machine/compare/v0.1.0...v0.2.0) (2026-10-08)
+
+
+### Features
+
+* show a display name next to the id in results ([#26](https://github.com/yaad-index/taste-machine/issues/26)) ([6678fcc](https://github.com/yaad-index/taste-machine/commit/6678fccd6cf06e4b81b4e31f44d98a45134d5fe8))
+
+
+### Bug Fixes
+
+* put each member's rating on their own scale in the group tie-break ([#22](https://github.com/yaad-index/taste-machine/issues/22)) ([b7b3e64](https://github.com/yaad-index/taste-machine/commit/b7b3e64365f08f16b017fd4818700c909c8eb6c5))
+
 ## 0.1.0 (2026-10-08)
 
 
