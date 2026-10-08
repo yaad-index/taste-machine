@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<items totalitems="6">
+  <item objecttype="thing" objectid="101" subtype="boardgame" collid="1">
+    <name sortindex="1">Game One</name>
+    <stats minplayers="2" maxplayers="4"><rating value="8.5"/></stats>
+    <status own="0" prevowned="0" fortrade="1" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0"/>
+    <numplays>5</numplays>
+  </item>
+  <item objecttype="thing" objectid="101" subtype="boardgame" collid="2">
+    <name sortindex="1">Game One</name>
+    <stats minplayers="2" maxplayers="4"><rating value="6"/></stats>
+    <status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0"/>
+    <numplays>3</numplays>
+  </item>
+  <item objecttype="thing" objectid="101" subtype="boardgame" collid="6">
+    <name sortindex="1">Game One</name>
+    <stats minplayers="2" maxplayers="4"><rating value="N/A"/></stats>
+    <status own="0" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="1" preordered="0"/>
+    <numplays>0</numplays>
+  </item>
+  <item objecttype="thing" objectid="102" subtype="boardgame" collid="3">
+    <name sortindex="1">Game Two</name>
+    <stats minplayers="1" maxplayers="1"><rating value="N/A"/></stats>
+    <status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0"/>
+    <numplays>0</numplays>
+  </item>
+  <item objecttype="thing" objectid="201" subtype="boardgame" collid="4">
+    <name sortindex="1">Game Three</name>
+    <stats minplayers="3" maxplayers="5"><rating value="4"/></stats>
+    <status own="0" prevowned="1" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0"/>
+    <numplays>1</numplays>
+  </item>
+  <item objecttype="thing" objectid="301" subtype="boardgame" collid="5">
+    <name sortindex="1">Game Four</name>
+    <stats minplayers="2" maxplayers="2"><rating value="N/A"/></stats>
+    <status own="0" prevowned="0" fortrade="0" want="1" wanttoplay="0" wanttobuy="0" wishlist="1" preordered="0"/>
+    <numplays>0</numplays>
+  </item>
+</items>

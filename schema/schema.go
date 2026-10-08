@@ -56,10 +56,13 @@ const DefaultBuckets = 5
 
 // Field is one declared field.
 type Field struct {
-	Name    string  `json:"name"`
-	Type    Type    `json:"type"`
-	Role    Role    `json:"role"`
-	Askable bool    `json:"askable,omitempty"`
+	Name    string `json:"name"`
+	Type    Type   `json:"type"`
+	Role    Role   `json:"role"`
+	Askable bool   `json:"askable,omitempty"`
+	// Weight scales the field in the taste score and in similarity. Zero
+	// means unset and counts as 1; a field that should not count at all
+	// takes role info instead.
 	Weight  float64 `json:"weight,omitempty"`
 	Missing Missing `json:"missing,omitempty"`
 	// Edges are declared bucket edges for a number field, ascending.
