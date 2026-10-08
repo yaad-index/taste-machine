@@ -11,6 +11,8 @@ A Go library with a CLI (`cmd/taste-machine`). Design decisions are numbered Arc
 - `schema`: field declarations (type, role, weights, buckets) and typed field values.
 - `fileformat`: reading and writing the zip files (catalogue, taste, acquisition list).
 - `dataset`: loading a shelf, taste files and an acquisition list together, checking they match, and joining them by item id.
+- `importer`: the interface every source implements; each source lives in its own package below it (`importer/bgg`).
+- `cmd/taste-machine`: the CLI, a thin Kong layer over the packages.
 
 ## Before pushing
 
