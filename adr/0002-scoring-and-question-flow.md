@@ -95,6 +95,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
   - Groups are taken over **all** options of the field (not only the 3 shown), plus a "none" group for items without the field.
   - With group sizes g and total G = Σ|g| (G can exceed |remaining| when set values overlap), P(g) = |g| / G and the expected remaining size is Σ|g|² / G.
   - Membership uses the "matches for narrowing" rule in section 6.
+- **Group size first:** in single-user mode, the field marked `group_size` is asked first when it is askable, before the expected-size rule. In group mode it is not asked (ADR 0003 sets it from N).
 - **Ties** break by schema order, then by field name.
 - **The 3 options shown** are ordered by the user's affinity (highest first), then by count in remaining. "Other" and "no preference" are always added.
 - **Stop** when remaining has 3 or fewer items, or no question splits it.
