@@ -103,3 +103,13 @@ func TestPickBadStoredAnswer(t *testing.T) {
 	assert.Equal(t, 1, run(context.Background(), []string{"pick", "--shelf", sp, "--taste", tp, "--one-shot"}, te.env()))
 	assert.Contains(t, te.stderr.String(), "want a string")
 }
+
+func TestPickShowsDisplayName(t *testing.T) {
+	sp, tp, _ := writeNamed(t, t.TempDir())
+	te := &testEnv{}
+	code := run(context.Background(), []string{"pick", "--shelf", sp, "--taste", tp, "--one-shot"}, te.env())
+	require.Equal(t, 0, code, te.stderr.String())
+	out := te.stdout.String()
+	assert.Contains(t, out, "a  Alpha  score ")
+	assert.Regexp(t, `(?m)^b  score `, out, "an item without a name shows its id only")
+}

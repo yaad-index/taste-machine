@@ -19,6 +19,8 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
 
 **Buckets for `number`:** declared edges in the catalogue metadata, or quantile edges computed from the **shelf's** distinct values (5 by default, set in catalogue metadata only). Tied values collapse buckets, so fewer than 5 is possible. Learn-from items are bucketed with the shelf's edges.
 
+**Display name:** the catalogue schema may mark one `info` `category` field `display: true`. Results, `check` neighbours and `check`'s excluded items show its value after the `id`. More than one marked field, any other type or role, or a mark in taste metadata is a load error. With no field marked, output shows the `id` only.
+
 ### 2. Taste signal per item
 - **Rating:** with the user's mean m on scale [lo, hi] (direction already applied):
   - signal = (r − m) / (hi − m) when r ≥ m;

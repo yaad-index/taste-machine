@@ -71,3 +71,13 @@ func TestCheckGroup(t *testing.T) {
 	assert.Contains(t, out, "x  vetoed: on the blocked list (two)\n")
 	assert.Contains(t, out, "new  group score")
 }
+
+func TestPickGroupShowsDisplayName(t *testing.T) {
+	dir := t.TempDir()
+	sp, tp, _ := writeNamed(t, dir)
+	tp2 := writeSecondTaste(t, dir, nil)
+	te := &testEnv{}
+	code := run(context.Background(), []string{"pick", "--shelf", sp, "--taste", tp, "--taste", tp2, "--one-shot"}, te.env())
+	require.Equal(t, 0, code, te.stderr.String())
+	assert.Contains(t, te.stdout.String(), "a  Alpha  group score ")
+}

@@ -173,7 +173,7 @@ const (
 // over the members who rated the item, each put on [0, 1] on that member's
 // own scale so members with different scales weigh the same.
 func (g *Group) Score(it score.Item) score.Result {
-	res := score.Result{ID: it.ID}
+	res := score.Result{ID: it.ID, Name: g.d.Schema.DisplayName(it.Facts)}
 	var sum, ratings float64
 	rated := 0
 	for i, mo := range g.Members {

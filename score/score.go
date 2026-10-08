@@ -25,6 +25,8 @@ type Contribution struct {
 // Result is a scored item with its explanation.
 type Result struct {
 	ID string
+	// Name is the item's display name, "" when the schema marks none.
+	Name string
 	// TasteScore is in [-1, 1]: 1 for a favourite, otherwise Computed.
 	TasteScore float64
 	// Computed is the score the history gives, before the favourites list.
@@ -89,7 +91,7 @@ func (r Result) Negative(n int) []Contribution {
 // of the field scores over every preference field, a missing field counting
 // as 0.
 func (mo *Model) Score(it Item) Result {
-	res := Result{ID: it.ID}
+	res := Result{ID: it.ID, Name: mo.d.Schema.DisplayName(it.Facts)}
 	var total float64
 	for _, f := range mo.Fields {
 		total += f.EffectiveWeight()
@@ -194,7 +196,7 @@ func (r Result) Explain() string {
 		return r.explainGroup()
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s  score %.3f", r.ID, r.Final)
+	fmt.Fprintf(&b, "%s  score %.3f", Label(r.ID, r.Name), r.Final)
 	if r.Favourite {
 		fmt.Fprintf(&b, "  (favourite: score shown is 1, history gives %.3f)", r.Computed)
 	}
@@ -212,6 +214,15 @@ func (r Result) Explain() string {
 		fmt.Fprintf(&b, "  passed: %s\n", p)
 	}
 	return b.String()
+}
+
+// Label is how an item reads in output: its id, then its display name
+// when it has one.
+func Label(id, name string) string {
+	if name == "" {
+		return id
+	}
+	return id + "  " + name
 }
 
 // AcquisitionItems returns every acquisition-list item as the member sees
@@ -237,7 +248,7 @@ func (mo *Model) CatalogueFields() []schema.Field { return mo.d.Schema.Fields }
 // have the item as a favourite.
 func (r Result) explainGroup() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s  group score %.3f\n", r.ID, r.Final)
+	fmt.Fprintf(&b, "%s  group score %.3f\n", Label(r.ID, r.Name), r.Final)
 	var favs []string
 	for _, m := range r.Members {
 		fmt.Fprintf(&b, "  %s: %.3f", m.Label, m.Score)

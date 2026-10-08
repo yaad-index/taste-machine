@@ -60,6 +60,12 @@ func TestValidateErrors(t *testing.T) {
 			{Name: "a", Type: schema.Range, Role: schema.Filter, GroupSize: true},
 			{Name: "b", Type: schema.Range, Role: schema.Filter, GroupSize: true},
 		}, "group_size is set on 2 fields"},
+		{"display on set", []schema.Field{{Name: "f", Type: schema.Set, Role: schema.Info, Display: true}}, "display is allowed on info category fields only, this is info set"},
+		{"display on preference", []schema.Field{{Name: "f", Type: schema.Category, Role: schema.Preference, Display: true}}, "this is preference category"},
+		{"display twice", []schema.Field{
+			{Name: "a", Type: schema.Category, Role: schema.Info, Display: true},
+			{Name: "b", Type: schema.Category, Role: schema.Info, Display: true},
+		}, "display is set on 2 fields"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -76,8 +82,24 @@ func TestValidateAccepts(t *testing.T) {
 		{Name: "weight", Type: schema.Number, Role: schema.Preference, Edges: []float64{1.5, 2.5, 3.5}},
 		{Name: "length", Type: schema.Number, Role: schema.Both, Buckets: 4, Missing: schema.Drop},
 		{Name: "tags", Type: schema.Set, Role: schema.Both, Askable: true, Weight: 2},
+		{Name: "name", Type: schema.Category, Role: schema.Info, Display: true},
 	}}
 	require.NoError(t, s.Validate())
+}
+
+func TestDisplayName(t *testing.T) {
+	facts := map[string]schema.Value{
+		"name": {Type: schema.Category, Category: "Shown"},
+		"kind": {Type: schema.Category, Category: "other"},
+	}
+	s := schema.Schema{Fields: []schema.Field{
+		{Name: "kind", Type: schema.Category, Role: schema.Info},
+		{Name: "name", Type: schema.Category, Role: schema.Info, Display: true},
+	}}
+	assert.Equal(t, "Shown", s.DisplayName(facts), "the marked field, not the first category")
+	assert.Empty(t, s.DisplayName(map[string]schema.Value{"kind": facts["kind"]}), "an item without the field")
+	s.Fields[1].Display = false
+	assert.Empty(t, s.DisplayName(facts), "no field marked")
 }
 
 func TestFieldDefaults(t *testing.T) {
