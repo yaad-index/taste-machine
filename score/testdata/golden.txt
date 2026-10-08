@@ -1,0 +1,60 @@
+g  score 1.000  (favourite: score shown is 1, history gives 0.140)
+  + theme = sea  +0.097
+  + weight = >= 3.5  +0.031
+  + best = 4  +0.027
+  - tags = v  -0.013
+  - tags = x  -0.003
+  passed: not on the blocked list
+  passed: tags is not q
+a  score 0.277
+  + tags = w  +0.100
+  + theme = sea  +0.097
+  + weight = < 2.5  +0.029
+  passed: not on the blocked list
+  passed: tags is not q
+d  score 0.177
+  + theme = sea  +0.097
+  + weight = >= 3.5  +0.031
+  + best = 4  +0.027
+  - tags = x  -0.003
+  passed: not on the blocked list
+  passed: tags is not q
+c  score 0.174
+  + tags = w  +0.100
+  + weight = >= 3.5  +0.031
+  + theme = forest  +0.029
+  - best = 2  -0.001
+  passed: not on the blocked list
+  passed: tags is not q
+f  score 0.129
+  + tags = w  +0.100
+  + theme = forest  +0.029
+  + tags = u  +0.024
+  - weight = 2.5 to < 3.5  -0.032
+  - best = 2  -0.001
+  passed: not on the blocked list
+  passed: tags is not q
+i  score 0.087
+  + theme = forest  +0.029
+  + weight = < 2.5  +0.029
+  + tags = u  +0.024
+  - tags = x  -0.003
+  - best = 2  -0.001
+  passed: not on the blocked list
+  passed: tags is not q
+e  score -0.012
+  + weight = < 2.5  +0.029
+  + best = 4  +0.018
+  + tags = y  +0.006
+  - theme = space  -0.051
+  - tags = v  -0.013
+  passed: not on the blocked list
+  passed: tags is not q
+b  score -0.081
+  + best = 4  +0.018
+  - theme = space  -0.051
+  - weight = 2.5 to < 3.5  -0.032
+  passed: not on the blocked list
+  passed: tags is not q
+excluded h: on the blocked list
+excluded j: tags is q, marked never
