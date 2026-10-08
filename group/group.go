@@ -170,7 +170,8 @@ const (
 // Score is ADR 0003 section 4: the group taste score is the mean of the
 // members' taste scores, a favourite counting 1 for that member. Floor is
 // the lowest member score, for the tie-break; Rating is the mean rating
-// over the members who rated the item.
+// over the members who rated the item, each put on [0, 1] on that member's
+// own scale so members with different scales weigh the same.
 func (g *Group) Score(it score.Item) score.Result {
 	res := score.Result{ID: it.ID}
 	var sum, ratings float64
@@ -182,7 +183,7 @@ func (g *Group) Score(it score.Item) score.Result {
 			res.Floor = r.TasteScore
 		}
 		if r.HasRated {
-			ratings += r.Rating
+			ratings += (r.Rating - mo.Scale.Min) / (mo.Scale.Max - mo.Scale.Min)
 			rated++
 		}
 		res.Members = append(res.Members, score.MemberScore{

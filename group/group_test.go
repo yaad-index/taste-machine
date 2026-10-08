@@ -173,7 +173,7 @@ func TestScore(t *testing.T) {
 	wantBob := bob.Score(bob.View(score.Item{ID: "c", Facts: shelf()[2].Facts})).TasteScore
 	assert.InDelta(t, (wantAnn+wantBob)/2, res.TasteScore, eps, "the mean of the members' scores")
 	assert.InDelta(t, min(wantAnn, wantBob), res.Floor, eps)
-	assert.InDelta(t, 7.0, res.Rating, eps, "mean rating over the members who rated: 4 and 10")
+	assert.InDelta(t, (3.0/9+1)/2, res.Rating, eps, "mean over the members who rated, each on [0, 1]: 4 and 10 on 1-10")
 	assert.True(t, res.HasRated)
 	require.Len(t, res.Members, 2)
 	assert.Equal(t, "ann", res.Members[0].Label)
@@ -184,11 +184,31 @@ func TestScore(t *testing.T) {
 	assert.True(t, res.Members[1].Favourite)
 	assert.InDelta(t, 1.0, res.Members[1].Score, eps, "a favourite counts 1 for that member only")
 	assert.InDelta(t, (res.Members[0].Score+1)/2, res.TasteScore, eps)
-	assert.InDelta(t, 4.0, res.Rating, eps, "only bob rated b")
+	assert.InDelta(t, 3.0/9, res.Rating, eps, "only bob rated b")
 	assert.Contains(t, res.Explain(), "favourite of: bob")
 
 	res = g.Score(score.Item{ID: "d", Facts: shelf()[3].Facts})
 	assert.False(t, res.HasRated)
+}
+
+func TestRatingOnEachMembersScale(t *testing.T) {
+	d := load(t, shelf(), nil,
+		member{"ann", &fileformat.TasteMeta{Scale: &fileformat.Scale{Min: 1, Max: 5}}, []fileformat.TasteItem{{ID: "a", Rating: r(5)}, {ID: "c", Rating: r(1)}}},
+		member{"bob", &fileformat.TasteMeta{Scale: &fileformat.Scale{Min: 1, Max: 10, Direction: fileformat.LowerBetter}}, []fileformat.TasteItem{{ID: "c", Rating: r(1)}, {ID: "b", Rating: r(8)}}},
+	)
+	g, err := group.New(d, 0, 1)
+	require.NoError(t, err)
+	rating := func(i int) float64 {
+		it := shelf()[i]
+		res := g.Score(score.Item{ID: it.ID, Facts: it.Facts})
+		require.True(t, res.HasRated)
+		return res.Rating
+	}
+	// Raw ratings would order c (1 and 10 after direction, mean 5.5), a (5),
+	// b (3); on each member's own scale a is a top rating and comes first.
+	assert.InDelta(t, 1.0, rating(0), eps, "ann's 5 is the top of 1-5")
+	assert.InDelta(t, 0.5, rating(2), eps, "ann's 1 is 0; bob's 1 on a lower-better scale is 1")
+	assert.InDelta(t, 2.0/9, rating(1), eps, "bob's 8 on lower-better 1-10")
 }
 
 func TestAffinityIsTheMean(t *testing.T) {

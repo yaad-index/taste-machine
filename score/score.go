@@ -41,7 +41,8 @@ type Result struct {
 	// Matched lists the answers the item matched, set by the question flow.
 	Matched []string
 	// Rating is the member's rating with direction applied; in group mode,
-	// the mean over the members who rated the item.
+	// the mean over the members who rated the item, each on [0, 1] on their
+	// own scale.
 	Rating   float64
 	HasRated bool
 	// Members holds each member's part in group mode, in label order.
