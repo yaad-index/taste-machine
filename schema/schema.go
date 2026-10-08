@@ -71,6 +71,8 @@ type Field struct {
 	Buckets int `json:"buckets,omitempty"`
 	// GroupSize marks the range field checked against the group size.
 	GroupSize bool `json:"group_size,omitempty"`
+	// Display marks the info category field shown next to an item's id.
+	Display bool `json:"display,omitempty"`
 }
 
 // Schema is the ordered list of fields a file declares. The order is the
@@ -95,7 +97,7 @@ var allowedRoles = map[Type][]Role{
 func (s Schema) Validate() error {
 	var errs []error
 	seen := make(map[string]bool, len(s.Fields))
-	groupSize := 0
+	groupSize, display := 0, 0
 	for i, f := range s.Fields {
 		if f.Name == "" {
 			errs = append(errs, fmt.Errorf("field %d: empty name", i))
@@ -109,9 +111,15 @@ func (s Schema) Validate() error {
 		if f.GroupSize {
 			groupSize++
 		}
+		if f.Display {
+			display++
+		}
 	}
 	if groupSize > 1 {
 		errs = append(errs, fmt.Errorf("group_size is set on %d fields, at most one is allowed", groupSize))
+	}
+	if display > 1 {
+		errs = append(errs, fmt.Errorf("display is set on %d fields, at most one is allowed", display))
 	}
 	return errors.Join(errs...)
 }
@@ -156,6 +164,9 @@ func (f Field) validate() []error {
 	if f.GroupSize && f.Type != Range {
 		errs = append(errs, fmt.Errorf("field %q: group_size on a %s field, only range fields may carry it", f.Name, f.Type))
 	}
+	if f.Display && (f.Type != Category || f.Role != Info) {
+		errs = append(errs, fmt.Errorf("field %q: display is allowed on info category fields only, this is %s %s", f.Name, f.Role, f.Type))
+	}
 	return errs
 }
 
@@ -167,6 +178,17 @@ func (s Schema) Field(name string) (Field, bool) {
 		}
 	}
 	return Field{}, false
+}
+
+// DisplayName is the item's value for the field marked display, or "" when
+// no field is marked or the item lacks it.
+func (s Schema) DisplayName(facts map[string]Value) string {
+	for _, f := range s.Fields {
+		if f.Display {
+			return facts[f.Name].Category
+		}
+	}
+	return ""
 }
 
 // EffectiveWeight is the declared weight, or 1 when none is declared.

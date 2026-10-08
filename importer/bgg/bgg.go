@@ -55,7 +55,7 @@ func CatalogueSchema() schema.Schema {
 		{Name: FieldMechanics, Type: schema.Set, Role: schema.Both, Askable: true},
 		{Name: FieldCategories, Type: schema.Set, Role: schema.Both, Askable: true},
 		{Name: FieldDesigners, Type: schema.Set, Role: schema.Preference},
-		{Name: FieldName, Type: schema.Category, Role: schema.Info},
+		{Name: FieldName, Type: schema.Category, Role: schema.Info, Display: true},
 		{Name: FieldYear, Type: schema.Number, Role: schema.Info},
 		{Name: FieldAverage, Type: schema.Number, Role: schema.Info},
 		{Name: FieldBayesAverage, Type: schema.Number, Role: schema.Info},

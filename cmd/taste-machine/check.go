@@ -28,7 +28,7 @@ func (c *checkCmd) Run(e env) error {
 			if r.Excluded.Member != "" && r.Excluded.Kind == score.ByList {
 				verb = "vetoed"
 			}
-			_, _ = fmt.Fprintf(e.stdout, "%s  %s: %s\n", r.ID, verb, r.Excluded)
+			_, _ = fmt.Fprintf(e.stdout, "%s  %s: %s\n", score.Label(r.ID, r.Name), verb, r.Excluded)
 		} else {
 			_, _ = fmt.Fprint(e.stdout, r.Result.Explain())
 		}
@@ -46,7 +46,7 @@ func closest(ns []check.Neighbour) string {
 	}
 	parts := make([]string, 0, len(ns))
 	for _, n := range ns {
-		parts = append(parts, fmt.Sprintf("%s (%.2f)", n.ID, n.Similarity))
+		parts = append(parts, fmt.Sprintf("%s (%.2f)", score.Label(n.ID, n.Name), n.Similarity))
 	}
 	return ": " + strings.Join(parts, ", ")
 }

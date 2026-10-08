@@ -244,6 +244,8 @@ func TestFactsVotesSumRepeatedCounts(t *testing.T) {
 func TestSchemasValidate(t *testing.T) {
 	require.NoError(t, bgg.CatalogueSchema().Validate())
 	require.NoError(t, bgg.TasteSchema().Validate())
+	name := schema.Value{Type: schema.Category, Category: "shown"}
+	assert.Equal(t, "shown", bgg.CatalogueSchema().DisplayName(map[string]schema.Value{bgg.FieldName: name}), "the name field is the display name")
 }
 
 func TestLimiterSpacesRequests(t *testing.T) {

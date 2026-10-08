@@ -150,6 +150,9 @@ func (m Metadata) validateTaste() []error {
 		if f.GroupSize {
 			errs = append(errs, fmt.Errorf("field %q: group_size is allowed in catalogue metadata only", f.Name))
 		}
+		if f.Display {
+			errs = append(errs, fmt.Errorf("field %q: display is allowed in catalogue metadata only", f.Name))
+		}
 	}
 	t := m.Taste
 	if t == nil {

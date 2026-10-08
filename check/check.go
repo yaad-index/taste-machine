@@ -16,13 +16,17 @@ const Closest = 3
 
 // Neighbour is a shelf item and its similarity to the checked item.
 type Neighbour struct {
-	ID         string
+	ID string
+	// Name is the display name, "" when the schema marks none.
+	Name       string
 	Similarity float64
 }
 
 // Report is the outcome for one acquisition-list item.
 type Report struct {
 	ID string
+	// Name is the display name, "" when the schema marks none.
+	Name string
 	// Excluded is set when the item was not scored: it is on the blocked
 	// list, or a hard filter removes it.
 	Excluded *score.Cause
@@ -68,6 +72,8 @@ func Run(mo score.Taste, threshold float64) []Report {
 }
 
 func report(mo score.Taste, it score.Item, shelf []score.Item, threshold float64, r Report) Report {
+	display := schema.Schema{Fields: mo.CatalogueFields()}
+	r.Name = display.DisplayName(it.Facts)
 	var near []Neighbour
 	for _, other := range shelf {
 		if other.ID == it.ID {
@@ -75,7 +81,7 @@ func report(mo score.Taste, it score.Item, shelf []score.Item, threshold float64
 			continue
 		}
 		if s := Similarity(mo, it, other); s >= threshold {
-			near = append(near, Neighbour{ID: other.ID, Similarity: s})
+			near = append(near, Neighbour{ID: other.ID, Name: display.DisplayName(other.Facts), Similarity: s})
 		}
 	}
 	slices.SortFunc(near, func(a, b Neighbour) int {
