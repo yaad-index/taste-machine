@@ -32,7 +32,7 @@ type pickCmd struct {
 }
 
 func (c *pickCmd) Run(e env) error {
-	mo, err := loadModel(c.Shelf, c.Taste, e)
+	mo, err := loadModel(c.Shelf, c.Taste, "", e)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,9 @@ func (c *pickCmd) Run(e env) error {
 	return nil
 }
 
-func loadModel(shelfPath, tastePath string, e env) (*score.Model, error) {
+// loadModel reads the files and learns the member's model. The acquisition
+// list is optional: pass "" for none.
+func loadModel(shelfPath, tastePath, acquisitionPath string, e env) (*score.Model, error) {
 	shelf, err := fileformat.ReadCatalogueFile(shelfPath)
 	if err != nil {
 		return nil, err
@@ -68,12 +70,21 @@ func loadModel(shelfPath, tastePath string, e env) (*score.Model, error) {
 	if err != nil {
 		return nil, err
 	}
+	var acq *fileformat.Catalogue
+	if acquisitionPath != "" {
+		if acq, err = fileformat.ReadCatalogueFile(acquisitionPath); err != nil {
+			return nil, err
+		}
+	}
 	name := strings.TrimSuffix(filepath.Base(tastePath), filepath.Ext(tastePath))
-	d, err := dataset.Load(shelf, []dataset.Input{{Taste: taste, Name: name}}, nil)
+	d, err := dataset.Load(shelf, []dataset.Input{{Taste: taste, Name: name}}, acq)
 	if err != nil {
 		return nil, err
 	}
 	for _, n := range d.Notices {
+		if n.Kind == dataset.AlreadyInCatalogue {
+			continue // check reports it per item
+		}
 		_, _ = fmt.Fprintf(e.stderr, "note: %s %s, ignored\n", n.Kind, n.ID)
 	}
 	return score.Learn(d, d.Members[0]), nil

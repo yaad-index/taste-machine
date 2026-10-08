@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+
+	"github.com/yaad-index/taste-machine/schema"
 )
 
 // Scorer scores one item for one member. ADR 0001 keeps v1 matching behind
@@ -183,3 +185,20 @@ func (r Result) Explain() string {
 	}
 	return b.String()
 }
+
+// AcquisitionItems returns every acquisition-list item as the member sees
+// it, in id order. An item the taste file mentions carries its entry.
+func (mo *Model) AcquisitionItems() []Item {
+	out := make([]Item, 0, len(mo.d.Acquisition))
+	for _, it := range mo.d.Acquisition {
+		item := Item{ID: it.ID, Facts: it.Facts}
+		if e, ok := mo.Member.Entries[it.ID]; ok {
+			item.Entry = &e
+		}
+		out = append(out, item)
+	}
+	return out
+}
+
+// CatalogueFields lists the catalogue's fields in schema order.
+func (mo *Model) CatalogueFields() []schema.Field { return mo.d.Schema.Fields }
