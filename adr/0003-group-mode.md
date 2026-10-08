@@ -36,6 +36,7 @@ Every result lists:
 - the top contributions per member (top 2 positive, top 1 negative);
 - the answers it matched and the filters it passed;
 - which members have it on their `favourites` list.
+
 Excluded items are counted per cause (a filter by member label, or `blocked` by member label), so the group can see why a candidate is missing.
 
 ### 7. `check` in group mode
