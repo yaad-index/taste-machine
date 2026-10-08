@@ -32,6 +32,7 @@ Every field (catalogue schema or taste metadata) declares `type`, `role` (`filte
 
 ### 3. Affinity per value
 - affinity(v) = Σ signal / (n + k), with k = 3. The sum runs over the n items that have value v.
+- The items counted in n are the member's history: taste entries with a rating or at least one play. An entry with neither says nothing about taste and is not counted; one play counts, with signal 0.
 - For `votes`, each item contributes signal × share(v), and n is Σ share(v), not the item count, so votes affinities sit on the same scale as category ones.
 - **A stated preference in the taste file** replaces affinity(v): like is +1, dislike is −1.
 - **"never"** is allowed only on fields whose role includes `filter`. It acts as that field's filter, so filtering still has one path. On other fields it is a load error.
